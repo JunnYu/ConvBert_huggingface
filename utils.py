@@ -20,7 +20,7 @@ class TransformersTokenizer(Transform):
             return TensorText(
                 self.tokenizer(x,
                                truncation=True,
-                               padding='max_length',
+                               padding=False,
                                max_length=512)['input_ids'])
 
     def decodes(self, x):
