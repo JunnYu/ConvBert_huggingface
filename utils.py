@@ -190,50 +190,50 @@ def bert_cls_splitter(m):
     "Split the classifier head from the backbone"
     groups = L([m.bert.embeddings] + [m.bert.encoder] + [m.bert.pooler] +
                [m.classifier])
-    return groups.map(params)
+    return groups.fliter(lambda x : x is not None).map(params)
 
 
 def bert_lm_splitter(m):
     "Split the classifier head from the backbone"
     groups = L([m.bert.embeddings] + [m.bert.encoder] + [m.bert.pooler] +
                [m.cls])
-    return groups.map(params)
+    return groups.fliter(lambda x : x is not None).map(params)
 
 
 def distilbert_cls_splitter(m):
     groups = L([m.distilbert.embeddings] + [m.distilbert.transformer] +
                [m.pre_classifier] + [m.classifier])
-    return groups.map(params)
+    return groups.fliter(lambda x : x is not None).map(params)
 
 
 def distilbert_lm_splitter(m):
     groups = L([m.distilbert.embeddings] + [m.distilbert.transformer] +
                [m.vocab_transform] + [m.vocab_projector])
-    return groups.map(params)
+    return groups.fliter(lambda x : x is not None).fliter(lambda x : x is not None).map(params)
 
 
 def albert_cls_splitter(m):
     groups = L([m.albert.embeddings] + [m.albert.encoder] + [m.albert.pooler] +
                [m.classifier])
-    return groups.map(params)
+    return groups.fliter(lambda x : x is not None).map(params)
 
 
 def albert_lm_splitter(m):
     groups = L([m.albert.embeddings] + [m.albert.encoder] + [m.albert.pooler] +
                [m.predictions])
-    return groups.map(params)
+    return groups.fliter(lambda x : x is not None).map(params)
 
 
 def roberta_cls_splitter(m):
     groups = L([m.roberta.embeddings] + [m.roberta.encoder] +
                [m.roberta.pooler] + [m.classifier])
-    return groups.map(params)
+    return groups.fliter(lambda x : x is not None).map(params)
 
 
 def roberta_lm_splitter(m):
     groups = L([m.roberta.embeddings] + [m.roberta.encoder] +
                [m.roberta.pooler] + [m.lm_head])
-    return groups.map(params)
+    return groups.fliter(lambda x : x is not None).map(params)
 
 
 splitters = {
