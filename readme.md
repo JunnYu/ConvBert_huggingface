@@ -10,6 +10,9 @@
 
 - 预计输出：
 
-  small max difference is : 3.4570693969726562e-06
-  medium-small max difference is : 3.337860107421875e-06
-  base max difference is : 5.7220458984375e-06
+  -- small max difference is : 3.4570693969726562e-06
+  -- medium-small max difference is : 3.337860107421875e-06
+  -- base max difference is : 5.7220458984375e-06
+
+### 依赖
+- transformers==3.5.1
