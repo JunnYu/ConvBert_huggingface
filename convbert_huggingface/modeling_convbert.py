@@ -18,42 +18,44 @@ import math
 import os
 import warnings
 from dataclasses import dataclass
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
-from torch.nn import CrossEntropyLoss, MSELoss
+import torch.nn.functional as F
 
-from .activations import ACT2FN, get_activation
-from .configuration_electra import ElectraConfig
-from .file_utils import (
+from torch.nn import CrossEntropyLoss, MSELoss
+from torch.nn.modules.conv import _ConvNd, _size_1_t, _single, Tensor
+
+from .configuration_convbert import ConvBertConfig
+from transformers.activations import ACT2FN, get_activation
+from transformers.file_utils import (
     ModelOutput,
     add_code_sample_docstrings,
     add_start_docstrings,
     add_start_docstrings_to_model_forward,
     replace_return_docstrings,
 )
-from .modeling_outputs import (
-    BaseModelOutput,
+from transformers.modeling_outputs import (
+    BaseModelOutputWithCrossAttentions,
     MaskedLMOutput,
     MultipleChoiceModelOutput,
     QuestionAnsweringModelOutput,
     SequenceClassifierOutput,
     TokenClassifierOutput,
 )
-from .modeling_utils import (
+from transformers.modeling_utils import (
     PreTrainedModel,
     SequenceSummary,
     apply_chunking_to_forward,
     find_pruneable_heads_and_indices,
     prune_linear_layer,
 )
-from .utils import logging
-from .convbert_utils import SeparableConv1d
+from transformers.utils import logging
 
 logger = logging.get_logger(__name__)
 
-_CONFIG_FOR_DOC = "ElectraConfig"
+_CONFIG_FOR_DOC = "ConvBertConfig"
 _TOKENIZER_FOR_DOC = "ElectraTokenizer"
 
 ELECTRA_PRETRAINED_MODEL_ARCHIVE_LIST = [
@@ -67,12 +69,9 @@ ELECTRA_PRETRAINED_MODEL_ARCHIVE_LIST = [
 ]
 
 
-def load_tf_weights_in_electra(model, tf_checkpoint_path):
+def load_tf_weights_in_convbert(model, tf_checkpoint_path):
     """Load tf checkpoints in a pytorch model."""
     try:
-        import re
-
-        import numpy as np
         import tensorflow as tf
     except ImportError:
         logger.error(
@@ -102,6 +101,14 @@ def load_tf_weights_in_electra(model, tf_checkpoint_path):
         f"electra/embeddings/LayerNorm/gamma"]
     model.embeddings.LayerNorm.bias.data = mydict[
         "electra/embeddings/LayerNorm/beta"]
+
+    # small & medium-small
+    if hasattr(model, "embeddings_project"):
+        model.embeddings_project.weight.data = mydict[
+            f"electra/embeddings_project/kernel"].t()
+        model.embeddings_project.bias.data = mydict[
+            f"electra/embeddings_project/bias"]
+
     for i in range(12):
         i = str(i)
         getattr(model.encoder.layer,
@@ -167,21 +174,178 @@ def load_tf_weights_in_electra(model, tf_checkpoint_path):
             model.encoder.layer,
             i).attention.output.LayerNorm.bias.data = mydict[
                 f"electra/encoder/layer_{i}/attention/output/LayerNorm/beta"]
-        getattr(model.encoder.layer,
+
+        if f"electra/encoder/layer_{i}/intermediate/dense/kernel" in mydict:
+            getattr(
+                model.encoder.layer,
                 i).intermediate.dense.weight.data = mydict[
                     f"electra/encoder/layer_{i}/intermediate/dense/kernel"].T
-        getattr(model.encoder.layer, i).intermediate.dense.bias.data = mydict[
-            f"electra/encoder/layer_{i}/intermediate/dense/bias"]
-        getattr(model.encoder.layer, i).output.dense.weight.data = mydict[
-            f"electra/encoder/layer_{i}/output/dense/kernel"].T
-        getattr(model.encoder.layer, i).output.dense.bias.data = mydict[
-            f"electra/encoder/layer_{i}/output/dense/bias"]
+            getattr(model.encoder.layer,
+                    i).intermediate.dense.bias.data = mydict[
+                        f"electra/encoder/layer_{i}/intermediate/dense/bias"]
+            getattr(model.encoder.layer, i).output.dense.weight.data = mydict[
+                f"electra/encoder/layer_{i}/output/dense/kernel"].T
+            getattr(model.encoder.layer, i).output.dense.bias.data = mydict[
+                f"electra/encoder/layer_{i}/output/dense/bias"]
+        else:
+            getattr(
+                model.encoder.layer,
+                i).intermediate.dense.weight.data = mydict[
+                    f"electra/encoder/layer_{i}/intermediate/g_dense/kernel"]
+            getattr(model.encoder.layer,
+                    i).intermediate.dense.bias.data = mydict[
+                        f"electra/encoder/layer_{i}/intermediate/g_dense/bias"]
+            getattr(model.encoder.layer, i).output.dense.weight.data = mydict[
+                f"electra/encoder/layer_{i}/output/g_dense/kernel"]
+            getattr(model.encoder.layer, i).output.dense.bias.data = mydict[
+                f"electra/encoder/layer_{i}/output/g_dense/bias"]
+
         getattr(model.encoder.layer, i).output.LayerNorm.weight.data = mydict[
             f"electra/encoder/layer_{i}/output/LayerNorm/gamma"]
         getattr(model.encoder.layer, i).output.LayerNorm.bias.data = mydict[
             f"electra/encoder/layer_{i}/output/LayerNorm/beta"]
 
     return model
+
+
+# utils_start
+class Conv1d(_ConvNd):
+    def __init__(self,
+                 in_channels: int,
+                 out_channels: int,
+                 kernel_size: _size_1_t,
+                 stride: _size_1_t = 1,
+                 padding: _size_1_t = 0,
+                 dilation: _size_1_t = 1,
+                 groups: int = 1,
+                 bias: bool = True,
+                 padding_mode: str = 'zeros'):
+        kernel_size = _single(kernel_size)
+        stride = _single(stride)
+        padding = _single(padding)
+        dilation = _single(dilation)
+        super(Conv1d, self).__init__(in_channels, out_channels, kernel_size,
+                                     stride, padding, dilation, False,
+                                     _single(0), groups, bias, padding_mode)
+
+    def forward(self, input: Tensor) -> Tensor:
+        return conv1d_same_padding(input, self.weight, self.bias, self.stride,
+                                   self.padding, self.dilation, self.groups,
+                                   self.padding_mode)
+
+
+def conv1d_same_padding(input,
+                        weight,
+                        bias=None,
+                        stride=1,
+                        padding=0,
+                        dilation=1,
+                        groups=1,
+                        padding_mode="zeros"):
+    if padding == "same":
+        input_rows = input.size(2)
+        filter_rows = weight.size(2)
+        out_rows = (input_rows + stride[0] - 1) // stride[0]
+        padding_rows = max(0, (out_rows - 1) * stride[0] +
+                           (filter_rows - 1) * dilation[0] + 1 - input_rows)
+
+        if padding_rows > 0:
+            if padding_mode == "zeros":
+                input = F.pad(
+                    input,
+                    [padding_rows // 2, padding_rows - padding_rows // 2],
+                    mode="constant",
+                    value=0)
+            else:
+                input = F.pad(
+                    input,
+                    [padding_rows // 2, padding_rows - padding_rows // 2],
+                    mode=padding_mode)
+        padding = (0, )
+
+    return F.conv1d(input,
+                    weight,
+                    bias,
+                    stride,
+                    padding=padding,
+                    dilation=dilation,
+                    groups=groups)
+
+
+class SeparableConv1d(nn.Module):
+    def __init__(self,
+                 in_channels: int,
+                 out_channels: int,
+                 kernel_size: int = 3,
+                 stride: int = 1,
+                 padding: Union[str, int] = 0,
+                 dilation: int = 1,
+                 use_bias: bool = True):
+        super().__init__()
+        self.use_bias: bool = use_bias
+        if self.use_bias:
+            self.bias = nn.Parameter(torch.zeros(out_channels, 1))
+        else:
+            self.register_parameter('bias', None)
+
+        self.depthwise = Conv1d(in_channels=in_channels,
+                                out_channels=in_channels,
+                                kernel_size=kernel_size,
+                                stride=stride,
+                                padding=padding,
+                                dilation=dilation,
+                                groups=in_channels,
+                                bias=False)
+
+        self.pointwise = Conv1d(in_channels=in_channels,
+                                out_channels=out_channels,
+                                kernel_size=1,
+                                stride=1,
+                                padding=0,
+                                dilation=1,
+                                groups=1,
+                                bias=False)
+
+    def forward(self, inputs):
+        out = self.pointwise(self.depthwise(inputs))
+        if self.bias is not None:
+            out += self.bias
+        return out
+
+
+class GLinear(nn.Module):
+    def __init__(self,
+                 in_features: int,
+                 out_features: int,
+                 groups=1,
+                 bias: bool = True) -> None:
+        super(GLinear, self).__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        # groups
+        self.groups = groups
+        self.group_in_dim = self.in_features // self.groups
+        self.group_out_dim = self.out_features // self.groups
+        self.weight = nn.Parameter(
+            torch.Tensor(self.groups, self.group_in_dim, self.group_out_dim))
+
+        if bias:
+            self.bias = nn.Parameter(torch.Tensor(out_features))
+        else:
+            self.register_parameter('bias', None)
+
+    def forward(self, input: torch.Tensor) -> torch.Tensor:
+        assert input.shape[-1] == self.in_features
+        input = input.view(-1, self.groups, self.group_in_dim).transpose(0, 1)
+        outputs = torch.matmul(input,
+                               self.weight).transpose(0, 1).contiguous().view(
+                                   -1, self.out_features)
+        if self.bias is not None:
+            outputs += self.bias
+        return outputs
+
+
+# utils_end
 
 
 class ElectraEmbeddings(nn.Module):
@@ -249,10 +413,9 @@ class ElectraSelfAttention(nn.Module):
                 "The hidden size (%d) is not a multiple of the number of attention "
                 "heads (%d)" %
                 (config.hidden_size, config.num_attention_heads))
-        self.radio = config.radio
-        self.num_attention_heads = config.num_attention_heads // self.radio
-        self.attention_head_size = config.hidden_size // config.num_attention_heads  # 64
 
+        self.attention_head_size = config.hidden_size // config.num_attention_heads  # 768/12=64
+        self.num_attention_heads = config.num_attention_heads // config.radio # 12/2=6
         self.all_head_size = self.num_attention_heads * self.attention_head_size  # 6*64
 
         self.query = nn.Linear(config.hidden_size, self.all_head_size)
@@ -260,13 +423,16 @@ class ElectraSelfAttention(nn.Module):
         self.value = nn.Linear(config.hidden_size, self.all_head_size)
         self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
 
-        ##################################
-        self.separable_conv1d = SeparableConv1d(config.hidden_size,
-                                                self.all_head_size,
-                                                padding="same",
-                                                kernel_size=9)
-        self.conv_attn_kernel = nn.Linear(self.all_head_size, 54)
         self.conv_kernel_size = config.conv_kernel_size
+        self.separable_conv1d = SeparableConv1d(
+            config.hidden_size,
+            self.all_head_size,
+            padding="same",
+            kernel_size=self.conv_kernel_size)
+        self.conv_attn_kernel = nn.Linear(
+            self.all_head_size,
+            self.num_attention_heads * self.conv_kernel_size)
+
         self.conv_attn_point = nn.Linear(config.hidden_size,
                                          self.all_head_size)
         self.unfold1d = nn.Unfold(kernel_size=[self.conv_kernel_size, 1],
@@ -289,8 +455,7 @@ class ElectraSelfAttention(nn.Module):
         output_attentions=False,
     ):
         mixed_query_layer = self.query(hidden_states)
-        bs = mixed_query_layer.shape[0]
-        seqlen = mixed_query_layer.shape[1]
+        bs,seqlen = mixed_query_layer.shape[:2]
         # If this is instantiated as a cross-attention module, the keys
         # and values come from an encoder; the attention mask needs to be
         # such that the encoder's padding tokens are not attended to.
@@ -321,10 +486,12 @@ class ElectraSelfAttention(nn.Module):
         unfold_conv_out_layer = self.unfold1d(conv_out_layer)
         unfold_conv_out_layer = unfold_conv_out_layer.transpose(1, 2).reshape(
             bs, seqlen, -1, self.conv_kernel_size)
-        conv_out_layer = torch.reshape(unfold_conv_out_layer,
-                                       [-1, self.attention_head_size, self.conv_kernel_size])
+        conv_out_layer = torch.reshape(
+            unfold_conv_out_layer,
+            [-1, self.attention_head_size, self.conv_kernel_size])
         conv_out_layer = torch.matmul(conv_out_layer, conv_kernel_layer)
-        conv_out = torch.reshape(conv_out_layer, [bs, seqlen, -1, self.attention_head_size])
+        conv_out = torch.reshape(conv_out_layer,
+                                 [bs, seqlen, -1, self.attention_head_size])
 
         # Take the dot product between "query" and "key" to get the raw attention scores.
         attention_scores = torch.matmul(query_layer,
@@ -428,7 +595,13 @@ class ElectraAttention(nn.Module):
 class ElectraIntermediate(nn.Module):
     def __init__(self, config):
         super().__init__()
-        self.dense = nn.Linear(config.hidden_size, config.intermediate_size)
+        if config.linear_groups == 1:
+            self.dense = nn.Linear(config.hidden_size,
+                                   config.intermediate_size)
+        else:
+            self.dense = GLinear(config.hidden_size,
+                                 config.intermediate_size,
+                                 groups=config.linear_groups)
         if isinstance(config.hidden_act, str):
             self.intermediate_act_fn = ACT2FN[config.hidden_act]
         else:
@@ -444,7 +617,13 @@ class ElectraIntermediate(nn.Module):
 class ElectraOutput(nn.Module):
     def __init__(self, config):
         super().__init__()
-        self.dense = nn.Linear(config.intermediate_size, config.hidden_size)
+        if config.linear_groups == 1:
+            self.dense = nn.Linear(config.intermediate_size,
+                                   config.hidden_size)
+        else:
+            self.dense = GLinear(config.intermediate_size,
+                                 config.hidden_size,
+                                 groups=config.linear_groups)
         self.LayerNorm = nn.LayerNorm(config.hidden_size,
                                       eps=config.layer_norm_eps)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
@@ -582,9 +761,10 @@ class ElectraEncoder(nn.Module):
             return tuple(
                 v for v in [hidden_states, all_hidden_states, all_attentions]
                 if v is not None)
-        return BaseModelOutput(last_hidden_state=hidden_states,
-                               hidden_states=all_hidden_states,
-                               attentions=all_attentions)
+        return BaseModelOutputWithCrossAttentions(
+            last_hidden_state=hidden_states,
+            hidden_states=all_hidden_states,
+            attentions=all_attentions)
 
 
 class ElectraDiscriminatorPredictions(nn.Module):
@@ -626,8 +806,8 @@ class ElectraPreTrainedModel(PreTrainedModel):
     models.
     """
 
-    config_class = ElectraConfig
-    load_tf_weights = load_tf_weights_in_electra
+    config_class = ConvBertConfig
+    load_tf_weights = load_tf_weights_in_convbert
     base_model_prefix = "electra"
     authorized_missing_keys = [r"position_ids"]
     authorized_unexpected_keys = [
@@ -690,7 +870,7 @@ ELECTRA_START_DOCSTRING = r"""
     general usage and behavior.
 
     Parameters:
-        config (:class:`~transformers.ElectraConfig`): Model configuration class with all the parameters of the model.
+        config (:class:`~transformers.ConvBertConfig`): Model configuration class with all the parameters of the model.
             Initializing with a config file does not load the weights associated with the model, only the
             configuration. Check out the :meth:`~transformers.PreTrainedModel.from_pretrained` method to load the model
             weights.
@@ -797,7 +977,7 @@ class ElectraModel(ElectraPreTrainedModel):
     @add_code_sample_docstrings(
         tokenizer_class=_TOKENIZER_FOR_DOC,
         checkpoint="google/electra-small-discriminator",
-        output_type=BaseModelOutput,
+        output_type=BaseModelOutputWithCrossAttentions,
         config_class=_CONFIG_FOR_DOC,
     )
     def forward(
@@ -1259,7 +1439,7 @@ class ElectraForTokenClassification(ElectraPreTrainedModel):
     ELECTRA_START_DOCSTRING,
 )
 class ElectraForQuestionAnswering(ElectraPreTrainedModel):
-    config_class = ElectraConfig
+    config_class = ConvBertConfig
     base_model_prefix = "electra"
 
     def __init__(self, config):
