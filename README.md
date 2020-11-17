@@ -1,0 +1,2 @@
+# ConvBert_huggingface
+修改huggingface的electra代码，加载ConvBert的discriminators权重
