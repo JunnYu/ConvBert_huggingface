@@ -109,7 +109,7 @@ def load_tf_weights_in_convbert(model, tf_checkpoint_path):
     # small & medium-small
     if hasattr(model, "embeddings_project"):
         model.embeddings_project.weight.data = mydict[
-            f"electra/embeddings_project/kernel"].t()
+            f"electra/embeddings_project/kernel"].T
         model.embeddings_project.bias.data = mydict[
             f"electra/embeddings_project/bias"]
 
