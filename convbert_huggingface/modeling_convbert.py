@@ -73,7 +73,7 @@ ELECTRA_PRETRAINED_MODEL_ARCHIVE_LIST = [
 ]
 
 
-def load_tf_weights_in_convbert(model, tf_checkpoint_path):
+def load_tf_weights_in_convbert(model, config, tf_checkpoint_path):
     """Load tf checkpoints in a pytorch model."""
     try:
         import tensorflow as tf
@@ -87,14 +87,12 @@ def load_tf_weights_in_convbert(model, tf_checkpoint_path):
     logger.info("Converting TensorFlow checkpoint from {}".format(tf_path))
     # Load weights from TF model
     init_vars = tf.train.list_variables(tf_path)
-    names = []
-    arrays = []
+    mydict = {}
     for name, shape in init_vars:
         logger.info("Loading TF weight {} with shape {}".format(name, shape))
         array = tf.train.load_variable(tf_path, name)
-        names.append(name)
-        arrays.append(torch.from_numpy(array))
-    mydict = dict(zip(names, arrays))
+        mydict[name] = torch.from_numpy(array)
+
     model.embeddings.word_embeddings.weight.data = mydict[
         f"electra/embeddings/word_embeddings"]
     model.embeddings.position_embeddings.weight.data = mydict[
@@ -113,7 +111,7 @@ def load_tf_weights_in_convbert(model, tf_checkpoint_path):
         model.embeddings_project.bias.data = mydict[
             f"electra/embeddings_project/bias"]
 
-    for i in range(12):
+    for i in range(config.num_hidden_layers):
         i = str(i)
         getattr(model.encoder.layer,
                 i).attention.self.query.weight.data = mydict[
