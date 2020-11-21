@@ -27,6 +27,7 @@ import torch.nn.functional as F
 from torch.nn import CrossEntropyLoss, MSELoss
 from torch.nn.modules.conv import _ConvNd, _size_1_t, _single, Tensor
 
+from .dynamicconv_layer import dynamicconvFunction
 from .configuration_convbert import ConvBertConfig
 from transformers.activations import ACT2FN, get_activation
 from transformers.file_utils import (
@@ -415,7 +416,7 @@ class ElectraSelfAttention(nn.Module):
                 (config.hidden_size, config.num_attention_heads))
 
         self.attention_head_size = config.hidden_size // config.num_attention_heads  # 768/12=64
-        self.num_attention_heads = config.num_attention_heads // config.radio # 12/2=6
+        self.num_attention_heads = config.num_attention_heads // config.radio  # 12/2=6
         self.all_head_size = self.num_attention_heads * self.attention_head_size  # 6*64
 
         self.query = nn.Linear(config.hidden_size, self.all_head_size)
@@ -435,9 +436,14 @@ class ElectraSelfAttention(nn.Module):
 
         self.conv_attn_point = nn.Linear(config.hidden_size,
                                          self.all_head_size)
-        self.unfold1d = nn.Unfold(kernel_size=[self.conv_kernel_size, 1],
-                                  padding=[(self.conv_kernel_size - 1) // 2,
-                                           0])
+        self.use_cuda_kernal = True
+        if not self.use_cuda_kernal:
+            self.unfold1d = nn.Unfold(kernel_size=[self.conv_kernel_size, 1],
+                                      padding=[
+                                          (self.conv_kernel_size - 1) // 2, 0
+                                      ])
+        else:
+            self.padding_l = (self.conv_kernel_size - 1) // 2
 
     def transpose_for_scores(self, x):
         new_x_shape = x.size()[:-1] + (self.num_attention_heads,
@@ -455,7 +461,7 @@ class ElectraSelfAttention(nn.Module):
         output_attentions=False,
     ):
         mixed_query_layer = self.query(hidden_states)
-        bs,seqlen = mixed_query_layer.shape[:2]
+        bs, seqlen = mixed_query_layer.shape[:2]
         # If this is instantiated as a cross-attention module, the keys
         # and values come from an encoder; the attention mask needs to be
         # such that the encoder's padding tokens are not attended to.
@@ -476,23 +482,40 @@ class ElectraSelfAttention(nn.Module):
             hidden_states.transpose(1, 2)).transpose(1, 2)
         conv_attn_layer = key_conv_attn_layer * mixed_query_layer
         conv_kernel_layer = self.conv_attn_kernel(conv_attn_layer)
-        conv_kernel_layer = conv_kernel_layer.reshape(-1,
-                                                      self.conv_kernel_size, 1)
-        conv_kernel_layer = torch.softmax(conv_kernel_layer, dim=1)
 
-        #conv_out_layer
-        conv_out_layer = self.conv_attn_point(hidden_states).transpose(
-            1, 2).contiguous().unsqueeze(-1)
-        unfold_conv_out_layer = self.unfold1d(conv_out_layer)
-        unfold_conv_out_layer = unfold_conv_out_layer.transpose(1, 2).reshape(
-            bs, seqlen, -1, self.conv_kernel_size)
-        conv_out_layer = torch.reshape(
-            unfold_conv_out_layer,
-            [-1, self.attention_head_size, self.conv_kernel_size])
-        conv_out_layer = torch.matmul(conv_out_layer, conv_kernel_layer)
-        conv_out = torch.reshape(conv_out_layer,
-                                 [bs, seqlen, -1, self.attention_head_size])
+        if not self.use_cuda_kernal:
+            conv_kernel_layer = conv_kernel_layer.reshape(
+                -1, self.conv_kernel_size, 1)
+            conv_kernel_layer = torch.softmax(conv_kernel_layer, dim=1)
+            #conv_out_layer
+            conv_out_layer = self.conv_attn_point(hidden_states).transpose(
+                1, 2).contiguous().unsqueeze(-1)
+            unfold_conv_out_layer = self.unfold1d(conv_out_layer)
+            unfold_conv_out_layer = unfold_conv_out_layer.transpose(
+                1, 2).reshape(bs, seqlen, -1, self.conv_kernel_size)
+            conv_out_layer = torch.reshape(
+                unfold_conv_out_layer,
+                [-1, self.attention_head_size, self.conv_kernel_size])
+            conv_out_layer = torch.matmul(conv_out_layer, conv_kernel_layer)
+            conv_out = torch.reshape(
+                conv_out_layer, [bs, seqlen, -1, self.attention_head_size])
+        else:
+            conv_kernel_layer = conv_kernel_layer.reshape(
+                bs, seqlen, -1, self.conv_kernel_size)
+            conv_kernel_layer = conv_kernel_layer.permute(0, 2, 3,
+                                                          1).contiguous()
+            # B H K T
+            weights = torch.softmax(conv_kernel_layer, dim=-2)
 
+            # B,C,T
+            conv_out_layer = self.conv_attn_point(hidden_states).transpose(
+                1, 2).contiguous()
+
+            conv_out_layer = dynamicconvFunction.apply(
+                conv_out_layer, weights,
+                self.padding_l).transpose(1, 2).contiguous()
+            conv_out = torch.reshape(
+                conv_out_layer, [bs, seqlen, -1, self.attention_head_size])
         # Take the dot product between "query" and "key" to get the raw attention scores.
         attention_scores = torch.matmul(query_layer,
                                         key_layer.transpose(-1, -2))
