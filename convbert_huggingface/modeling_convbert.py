@@ -26,8 +26,11 @@ import torch.nn.functional as F
 
 from torch.nn import CrossEntropyLoss, MSELoss
 from torch.nn.modules.conv import _ConvNd, _size_1_t, _single, Tensor
+try:
+    from .dynamicconv_layer import dynamicconvFunction
+except:
+    print("dynamicconv_layer的dynamicconvFunction导入失败")
 
-from .dynamicconv_layer import dynamicconvFunction
 from .configuration_convbert import ConvBertConfig
 from transformers.activations import ACT2FN, get_activation
 from transformers.file_utils import (
