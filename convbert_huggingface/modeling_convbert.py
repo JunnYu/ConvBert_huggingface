@@ -436,7 +436,7 @@ class ElectraSelfAttention(nn.Module):
 
         self.conv_attn_point = nn.Linear(config.hidden_size,
                                          self.all_head_size)
-        self.use_cuda_kernal = True
+        self.use_cuda_kernal = config.use_cuda_kernal
         if not self.use_cuda_kernal:
             self.unfold1d = nn.Unfold(kernel_size=[self.conv_kernel_size, 1],
                                       padding=[

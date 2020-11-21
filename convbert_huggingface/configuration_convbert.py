@@ -140,6 +140,7 @@ class ConvBertConfig(PretrainedConfig):
                  linear_groups=1,
                  conv_kernel_size=9,
                  radio=2,
+                 use_cuda_kernal=False,
                  **kwargs):
         super().__init__(pad_token_id=pad_token_id, **kwargs)
 
@@ -160,7 +161,7 @@ class ConvBertConfig(PretrainedConfig):
         self.linear_groups = linear_groups
         self.conv_kernel_size = conv_kernel_size
         self.radio = radio
-
+        self.use_cuda_kernal = use_cuda_kernal
         self.summary_type = summary_type
         self.summary_use_proj = summary_use_proj
         self.summary_activation = summary_activation

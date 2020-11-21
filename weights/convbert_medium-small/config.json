@@ -19,5 +19,6 @@
   "pad_token_id": 0,
   "radio": 2,
   "type_vocab_size": 2,
-  "vocab_size": 30522
+  "vocab_size": 30522,
+  "use_cuda_kernal": false
 }
