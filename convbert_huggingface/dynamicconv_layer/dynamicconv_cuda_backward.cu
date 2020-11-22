@@ -156,6 +156,48 @@ std::vector<at::Tensor> dynamicconv_cuda_backward(at::Tensor gradOutput, int pad
                 break;
 
 
+            case 9:
+
+                if (padding_l == 4) {
+                    AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
+                        dynamicconv_backward_kernel<9, 32, 4, scalar_t>
+                        <<<blocks, 32, 0, stream>>>(
+                                    gradOutput.data<scalar_t>(),
+                                    input.data<scalar_t>(),
+                                    weight.data<scalar_t>(),
+                                    minibatch,
+                                    sequenceLength,
+                                    numFeatures,
+                                    numFiltersInBlock,
+                                    numHeads,
+                                    gradWeight.data<scalar_t>(),
+                                    gradInput.data<scalar_t>());
+                    }));
+                } else
+
+                if (padding_l == 8) {
+                    AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
+                        dynamicconv_backward_kernel<9, 32, 8, scalar_t>
+                        <<<blocks, 32, 0, stream>>>(
+                                    gradOutput.data<scalar_t>(),
+                                    input.data<scalar_t>(),
+                                    weight.data<scalar_t>(),
+                                    minibatch,
+                                    sequenceLength,
+                                    numFeatures,
+                                    numFiltersInBlock,
+                                    numHeads,
+                                    gradWeight.data<scalar_t>(),
+                                    gradInput.data<scalar_t>());
+                    }));
+                } else
+
+                {
+                    std::cout << "WARNING: Unsupported padding size - skipping backward pass" << std::endl;
+                }
+                break;
+
+
             case 15:
 
                 if (padding_l == 7) {
@@ -481,6 +523,48 @@ std::vector<at::Tensor> dynamicconv_cuda_backward(at::Tensor gradOutput, int pad
                 if (padding_l == 6) {
                     AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
                         dynamicconv_backward_kernel<7, 64, 6, scalar_t>
+                        <<<blocks, 64, 0, stream>>>(
+                                    gradOutput.data<scalar_t>(),
+                                    input.data<scalar_t>(),
+                                    weight.data<scalar_t>(),
+                                    minibatch,
+                                    sequenceLength,
+                                    numFeatures,
+                                    numFiltersInBlock,
+                                    numHeads,
+                                    gradWeight.data<scalar_t>(),
+                                    gradInput.data<scalar_t>());
+                    }));
+                } else
+
+                {
+                    std::cout << "WARNING: Unsupported padding size - skipping backward pass" << std::endl;
+                }
+                break;
+
+
+            case 9:
+
+                if (padding_l == 4) {
+                    AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
+                        dynamicconv_backward_kernel<9, 64, 4, scalar_t>
+                        <<<blocks, 64, 0, stream>>>(
+                                    gradOutput.data<scalar_t>(),
+                                    input.data<scalar_t>(),
+                                    weight.data<scalar_t>(),
+                                    minibatch,
+                                    sequenceLength,
+                                    numFeatures,
+                                    numFiltersInBlock,
+                                    numHeads,
+                                    gradWeight.data<scalar_t>(),
+                                    gradInput.data<scalar_t>());
+                    }));
+                } else
+
+                if (padding_l == 8) {
+                    AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
+                        dynamicconv_backward_kernel<9, 64, 8, scalar_t>
                         <<<blocks, 64, 0, stream>>>(
                                     gradOutput.data<scalar_t>(),
                                     input.data<scalar_t>(),
@@ -846,6 +930,48 @@ std::vector<at::Tensor> dynamicconv_cuda_backward(at::Tensor gradOutput, int pad
                 break;
 
 
+            case 9:
+
+                if (padding_l == 4) {
+                    AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
+                        dynamicconv_backward_kernel<9, 96, 4, scalar_t>
+                        <<<blocks, 96, 0, stream>>>(
+                                    gradOutput.data<scalar_t>(),
+                                    input.data<scalar_t>(),
+                                    weight.data<scalar_t>(),
+                                    minibatch,
+                                    sequenceLength,
+                                    numFeatures,
+                                    numFiltersInBlock,
+                                    numHeads,
+                                    gradWeight.data<scalar_t>(),
+                                    gradInput.data<scalar_t>());
+                    }));
+                } else
+
+                if (padding_l == 8) {
+                    AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
+                        dynamicconv_backward_kernel<9, 96, 8, scalar_t>
+                        <<<blocks, 96, 0, stream>>>(
+                                    gradOutput.data<scalar_t>(),
+                                    input.data<scalar_t>(),
+                                    weight.data<scalar_t>(),
+                                    minibatch,
+                                    sequenceLength,
+                                    numFeatures,
+                                    numFiltersInBlock,
+                                    numHeads,
+                                    gradWeight.data<scalar_t>(),
+                                    gradInput.data<scalar_t>());
+                    }));
+                } else
+
+                {
+                    std::cout << "WARNING: Unsupported padding size - skipping backward pass" << std::endl;
+                }
+                break;
+
+
             case 15:
 
                 if (padding_l == 7) {
@@ -1171,6 +1297,48 @@ std::vector<at::Tensor> dynamicconv_cuda_backward(at::Tensor gradOutput, int pad
                 if (padding_l == 6) {
                     AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
                         dynamicconv_backward_kernel<7, 128, 6, scalar_t>
+                        <<<blocks, 128, 0, stream>>>(
+                                    gradOutput.data<scalar_t>(),
+                                    input.data<scalar_t>(),
+                                    weight.data<scalar_t>(),
+                                    minibatch,
+                                    sequenceLength,
+                                    numFeatures,
+                                    numFiltersInBlock,
+                                    numHeads,
+                                    gradWeight.data<scalar_t>(),
+                                    gradInput.data<scalar_t>());
+                    }));
+                } else
+
+                {
+                    std::cout << "WARNING: Unsupported padding size - skipping backward pass" << std::endl;
+                }
+                break;
+
+
+            case 9:
+
+                if (padding_l == 4) {
+                    AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
+                        dynamicconv_backward_kernel<9, 128, 4, scalar_t>
+                        <<<blocks, 128, 0, stream>>>(
+                                    gradOutput.data<scalar_t>(),
+                                    input.data<scalar_t>(),
+                                    weight.data<scalar_t>(),
+                                    minibatch,
+                                    sequenceLength,
+                                    numFeatures,
+                                    numFiltersInBlock,
+                                    numHeads,
+                                    gradWeight.data<scalar_t>(),
+                                    gradInput.data<scalar_t>());
+                    }));
+                } else
+
+                if (padding_l == 8) {
+                    AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
+                        dynamicconv_backward_kernel<9, 128, 8, scalar_t>
                         <<<blocks, 128, 0, stream>>>(
                                     gradOutput.data<scalar_t>(),
                                     input.data<scalar_t>(),
@@ -1536,6 +1704,48 @@ std::vector<at::Tensor> dynamicconv_cuda_backward(at::Tensor gradOutput, int pad
                 break;
 
 
+            case 9:
+
+                if (padding_l == 4) {
+                    AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
+                        dynamicconv_backward_kernel<9, 160, 4, scalar_t>
+                        <<<blocks, 160, 0, stream>>>(
+                                    gradOutput.data<scalar_t>(),
+                                    input.data<scalar_t>(),
+                                    weight.data<scalar_t>(),
+                                    minibatch,
+                                    sequenceLength,
+                                    numFeatures,
+                                    numFiltersInBlock,
+                                    numHeads,
+                                    gradWeight.data<scalar_t>(),
+                                    gradInput.data<scalar_t>());
+                    }));
+                } else
+
+                if (padding_l == 8) {
+                    AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
+                        dynamicconv_backward_kernel<9, 160, 8, scalar_t>
+                        <<<blocks, 160, 0, stream>>>(
+                                    gradOutput.data<scalar_t>(),
+                                    input.data<scalar_t>(),
+                                    weight.data<scalar_t>(),
+                                    minibatch,
+                                    sequenceLength,
+                                    numFeatures,
+                                    numFiltersInBlock,
+                                    numHeads,
+                                    gradWeight.data<scalar_t>(),
+                                    gradInput.data<scalar_t>());
+                    }));
+                } else
+
+                {
+                    std::cout << "WARNING: Unsupported padding size - skipping backward pass" << std::endl;
+                }
+                break;
+
+
             case 15:
 
                 if (padding_l == 7) {
@@ -1861,6 +2071,48 @@ std::vector<at::Tensor> dynamicconv_cuda_backward(at::Tensor gradOutput, int pad
                 if (padding_l == 6) {
                     AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
                         dynamicconv_backward_kernel<7, 192, 6, scalar_t>
+                        <<<blocks, 192, 0, stream>>>(
+                                    gradOutput.data<scalar_t>(),
+                                    input.data<scalar_t>(),
+                                    weight.data<scalar_t>(),
+                                    minibatch,
+                                    sequenceLength,
+                                    numFeatures,
+                                    numFiltersInBlock,
+                                    numHeads,
+                                    gradWeight.data<scalar_t>(),
+                                    gradInput.data<scalar_t>());
+                    }));
+                } else
+
+                {
+                    std::cout << "WARNING: Unsupported padding size - skipping backward pass" << std::endl;
+                }
+                break;
+
+
+            case 9:
+
+                if (padding_l == 4) {
+                    AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
+                        dynamicconv_backward_kernel<9, 192, 4, scalar_t>
+                        <<<blocks, 192, 0, stream>>>(
+                                    gradOutput.data<scalar_t>(),
+                                    input.data<scalar_t>(),
+                                    weight.data<scalar_t>(),
+                                    minibatch,
+                                    sequenceLength,
+                                    numFeatures,
+                                    numFiltersInBlock,
+                                    numHeads,
+                                    gradWeight.data<scalar_t>(),
+                                    gradInput.data<scalar_t>());
+                    }));
+                } else
+
+                if (padding_l == 8) {
+                    AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
+                        dynamicconv_backward_kernel<9, 192, 8, scalar_t>
                         <<<blocks, 192, 0, stream>>>(
                                     gradOutput.data<scalar_t>(),
                                     input.data<scalar_t>(),
@@ -2226,6 +2478,48 @@ std::vector<at::Tensor> dynamicconv_cuda_backward(at::Tensor gradOutput, int pad
                 break;
 
 
+            case 9:
+
+                if (padding_l == 4) {
+                    AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
+                        dynamicconv_backward_kernel<9, 224, 4, scalar_t>
+                        <<<blocks, 224, 0, stream>>>(
+                                    gradOutput.data<scalar_t>(),
+                                    input.data<scalar_t>(),
+                                    weight.data<scalar_t>(),
+                                    minibatch,
+                                    sequenceLength,
+                                    numFeatures,
+                                    numFiltersInBlock,
+                                    numHeads,
+                                    gradWeight.data<scalar_t>(),
+                                    gradInput.data<scalar_t>());
+                    }));
+                } else
+
+                if (padding_l == 8) {
+                    AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
+                        dynamicconv_backward_kernel<9, 224, 8, scalar_t>
+                        <<<blocks, 224, 0, stream>>>(
+                                    gradOutput.data<scalar_t>(),
+                                    input.data<scalar_t>(),
+                                    weight.data<scalar_t>(),
+                                    minibatch,
+                                    sequenceLength,
+                                    numFeatures,
+                                    numFiltersInBlock,
+                                    numHeads,
+                                    gradWeight.data<scalar_t>(),
+                                    gradInput.data<scalar_t>());
+                    }));
+                } else
+
+                {
+                    std::cout << "WARNING: Unsupported padding size - skipping backward pass" << std::endl;
+                }
+                break;
+
+
             case 15:
 
                 if (padding_l == 7) {
@@ -2571,6 +2865,48 @@ std::vector<at::Tensor> dynamicconv_cuda_backward(at::Tensor gradOutput, int pad
                 break;
 
 
+            case 9:
+
+                if (padding_l == 4) {
+                    AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
+                        dynamicconv_backward_kernel<9, 256, 4, scalar_t>
+                        <<<blocks, 256, 0, stream>>>(
+                                    gradOutput.data<scalar_t>(),
+                                    input.data<scalar_t>(),
+                                    weight.data<scalar_t>(),
+                                    minibatch,
+                                    sequenceLength,
+                                    numFeatures,
+                                    numFiltersInBlock,
+                                    numHeads,
+                                    gradWeight.data<scalar_t>(),
+                                    gradInput.data<scalar_t>());
+                    }));
+                } else
+
+                if (padding_l == 8) {
+                    AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
+                        dynamicconv_backward_kernel<9, 256, 8, scalar_t>
+                        <<<blocks, 256, 0, stream>>>(
+                                    gradOutput.data<scalar_t>(),
+                                    input.data<scalar_t>(),
+                                    weight.data<scalar_t>(),
+                                    minibatch,
+                                    sequenceLength,
+                                    numFeatures,
+                                    numFiltersInBlock,
+                                    numHeads,
+                                    gradWeight.data<scalar_t>(),
+                                    gradInput.data<scalar_t>());
+                    }));
+                } else
+
+                {
+                    std::cout << "WARNING: Unsupported padding size - skipping backward pass" << std::endl;
+                }
+                break;
+
+
             case 15:
 
                 if (padding_l == 7) {
@@ -2896,6 +3232,48 @@ std::vector<at::Tensor> dynamicconv_cuda_backward(at::Tensor gradOutput, int pad
                 if (padding_l == 6) {
                     AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
                         dynamicconv_backward_kernel<7, 288, 6, scalar_t>
+                        <<<blocks, 288, 0, stream>>>(
+                                    gradOutput.data<scalar_t>(),
+                                    input.data<scalar_t>(),
+                                    weight.data<scalar_t>(),
+                                    minibatch,
+                                    sequenceLength,
+                                    numFeatures,
+                                    numFiltersInBlock,
+                                    numHeads,
+                                    gradWeight.data<scalar_t>(),
+                                    gradInput.data<scalar_t>());
+                    }));
+                } else
+
+                {
+                    std::cout << "WARNING: Unsupported padding size - skipping backward pass" << std::endl;
+                }
+                break;
+
+
+            case 9:
+
+                if (padding_l == 4) {
+                    AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
+                        dynamicconv_backward_kernel<9, 288, 4, scalar_t>
+                        <<<blocks, 288, 0, stream>>>(
+                                    gradOutput.data<scalar_t>(),
+                                    input.data<scalar_t>(),
+                                    weight.data<scalar_t>(),
+                                    minibatch,
+                                    sequenceLength,
+                                    numFeatures,
+                                    numFiltersInBlock,
+                                    numHeads,
+                                    gradWeight.data<scalar_t>(),
+                                    gradInput.data<scalar_t>());
+                    }));
+                } else
+
+                if (padding_l == 8) {
+                    AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
+                        dynamicconv_backward_kernel<9, 288, 8, scalar_t>
                         <<<blocks, 288, 0, stream>>>(
                                     gradOutput.data<scalar_t>(),
                                     input.data<scalar_t>(),
@@ -3267,6 +3645,48 @@ std::vector<at::Tensor> dynamicconv_cuda_backward(at::Tensor gradOutput, int pad
                 break;
 
 
+            case 9:
+
+                if (padding_l == 4) {
+                    AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
+                        dynamicconv_backward_kernel<9, 320, 4, scalar_t>
+                        <<<blocks, 320, 0, stream>>>(
+                                    gradOutput.data<scalar_t>(),
+                                    input.data<scalar_t>(),
+                                    weight.data<scalar_t>(),
+                                    minibatch,
+                                    sequenceLength,
+                                    numFeatures,
+                                    numFiltersInBlock,
+                                    numHeads,
+                                    gradWeight.data<scalar_t>(),
+                                    gradInput.data<scalar_t>());
+                    }));
+                } else
+
+                if (padding_l == 8) {
+                    AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
+                        dynamicconv_backward_kernel<9, 320, 8, scalar_t>
+                        <<<blocks, 320, 0, stream>>>(
+                                    gradOutput.data<scalar_t>(),
+                                    input.data<scalar_t>(),
+                                    weight.data<scalar_t>(),
+                                    minibatch,
+                                    sequenceLength,
+                                    numFeatures,
+                                    numFiltersInBlock,
+                                    numHeads,
+                                    gradWeight.data<scalar_t>(),
+                                    gradInput.data<scalar_t>());
+                    }));
+                } else
+
+                {
+                    std::cout << "WARNING: Unsupported padding size - skipping backward pass" << std::endl;
+                }
+                break;
+
+
             case 15:
 
                 if (padding_l == 7) {
@@ -3618,6 +4038,48 @@ std::vector<at::Tensor> dynamicconv_cuda_backward(at::Tensor gradOutput, int pad
                 break;
 
 
+            case 9:
+
+                if (padding_l == 4) {
+                    AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
+                        dynamicconv_backward_kernel<9, 352, 4, scalar_t>
+                        <<<blocks, 352, 0, stream>>>(
+                                    gradOutput.data<scalar_t>(),
+                                    input.data<scalar_t>(),
+                                    weight.data<scalar_t>(),
+                                    minibatch,
+                                    sequenceLength,
+                                    numFeatures,
+                                    numFiltersInBlock,
+                                    numHeads,
+                                    gradWeight.data<scalar_t>(),
+                                    gradInput.data<scalar_t>());
+                    }));
+                } else
+
+                if (padding_l == 8) {
+                    AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
+                        dynamicconv_backward_kernel<9, 352, 8, scalar_t>
+                        <<<blocks, 352, 0, stream>>>(
+                                    gradOutput.data<scalar_t>(),
+                                    input.data<scalar_t>(),
+                                    weight.data<scalar_t>(),
+                                    minibatch,
+                                    sequenceLength,
+                                    numFeatures,
+                                    numFiltersInBlock,
+                                    numHeads,
+                                    gradWeight.data<scalar_t>(),
+                                    gradInput.data<scalar_t>());
+                    }));
+                } else
+
+                {
+                    std::cout << "WARNING: Unsupported padding size - skipping backward pass" << std::endl;
+                }
+                break;
+
+
             case 15:
 
                 if (padding_l == 7) {
@@ -3949,6 +4411,48 @@ std::vector<at::Tensor> dynamicconv_cuda_backward(at::Tensor gradOutput, int pad
                 if (padding_l == 6) {
                     AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
                         dynamicconv_backward_kernel<7, 384, 6, scalar_t>
+                        <<<blocks, 384, 0, stream>>>(
+                                    gradOutput.data<scalar_t>(),
+                                    input.data<scalar_t>(),
+                                    weight.data<scalar_t>(),
+                                    minibatch,
+                                    sequenceLength,
+                                    numFeatures,
+                                    numFiltersInBlock,
+                                    numHeads,
+                                    gradWeight.data<scalar_t>(),
+                                    gradInput.data<scalar_t>());
+                    }));
+                } else
+
+                {
+                    std::cout << "WARNING: Unsupported padding size - skipping backward pass" << std::endl;
+                }
+                break;
+
+
+            case 9:
+
+                if (padding_l == 4) {
+                    AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
+                        dynamicconv_backward_kernel<9, 384, 4, scalar_t>
+                        <<<blocks, 384, 0, stream>>>(
+                                    gradOutput.data<scalar_t>(),
+                                    input.data<scalar_t>(),
+                                    weight.data<scalar_t>(),
+                                    minibatch,
+                                    sequenceLength,
+                                    numFeatures,
+                                    numFiltersInBlock,
+                                    numHeads,
+                                    gradWeight.data<scalar_t>(),
+                                    gradInput.data<scalar_t>());
+                    }));
+                } else
+
+                if (padding_l == 8) {
+                    AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
+                        dynamicconv_backward_kernel<9, 384, 8, scalar_t>
                         <<<blocks, 384, 0, stream>>>(
                                     gradOutput.data<scalar_t>(),
                                     input.data<scalar_t>(),
@@ -4323,6 +4827,48 @@ std::vector<at::Tensor> dynamicconv_cuda_backward(at::Tensor gradOutput, int pad
                 break;
 
 
+            case 9:
+
+                if (padding_l == 4) {
+                    AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
+                        dynamicconv_backward_kernel<9, 416, 4, scalar_t>
+                        <<<blocks, 416, 0, stream>>>(
+                                    gradOutput.data<scalar_t>(),
+                                    input.data<scalar_t>(),
+                                    weight.data<scalar_t>(),
+                                    minibatch,
+                                    sequenceLength,
+                                    numFeatures,
+                                    numFiltersInBlock,
+                                    numHeads,
+                                    gradWeight.data<scalar_t>(),
+                                    gradInput.data<scalar_t>());
+                    }));
+                } else
+
+                if (padding_l == 8) {
+                    AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
+                        dynamicconv_backward_kernel<9, 416, 8, scalar_t>
+                        <<<blocks, 416, 0, stream>>>(
+                                    gradOutput.data<scalar_t>(),
+                                    input.data<scalar_t>(),
+                                    weight.data<scalar_t>(),
+                                    minibatch,
+                                    sequenceLength,
+                                    numFeatures,
+                                    numFiltersInBlock,
+                                    numHeads,
+                                    gradWeight.data<scalar_t>(),
+                                    gradInput.data<scalar_t>());
+                    }));
+                } else
+
+                {
+                    std::cout << "WARNING: Unsupported padding size - skipping backward pass" << std::endl;
+                }
+                break;
+
+
             case 15:
 
                 if (padding_l == 7) {
@@ -4657,6 +5203,48 @@ std::vector<at::Tensor> dynamicconv_cuda_backward(at::Tensor gradOutput, int pad
                 if (padding_l == 6) {
                     AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
                         dynamicconv_backward_kernel<7, 448, 6, scalar_t>
+                        <<<blocks, 448, 0, stream>>>(
+                                    gradOutput.data<scalar_t>(),
+                                    input.data<scalar_t>(),
+                                    weight.data<scalar_t>(),
+                                    minibatch,
+                                    sequenceLength,
+                                    numFeatures,
+                                    numFiltersInBlock,
+                                    numHeads,
+                                    gradWeight.data<scalar_t>(),
+                                    gradInput.data<scalar_t>());
+                    }));
+                } else
+
+                {
+                    std::cout << "WARNING: Unsupported padding size - skipping backward pass" << std::endl;
+                }
+                break;
+
+
+            case 9:
+
+                if (padding_l == 4) {
+                    AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
+                        dynamicconv_backward_kernel<9, 448, 4, scalar_t>
+                        <<<blocks, 448, 0, stream>>>(
+                                    gradOutput.data<scalar_t>(),
+                                    input.data<scalar_t>(),
+                                    weight.data<scalar_t>(),
+                                    minibatch,
+                                    sequenceLength,
+                                    numFeatures,
+                                    numFiltersInBlock,
+                                    numHeads,
+                                    gradWeight.data<scalar_t>(),
+                                    gradInput.data<scalar_t>());
+                    }));
+                } else
+
+                if (padding_l == 8) {
+                    AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
+                        dynamicconv_backward_kernel<9, 448, 8, scalar_t>
                         <<<blocks, 448, 0, stream>>>(
                                     gradOutput.data<scalar_t>(),
                                     input.data<scalar_t>(),
@@ -5031,6 +5619,48 @@ std::vector<at::Tensor> dynamicconv_cuda_backward(at::Tensor gradOutput, int pad
                 break;
 
 
+            case 9:
+
+                if (padding_l == 4) {
+                    AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
+                        dynamicconv_backward_kernel<9, 480, 4, scalar_t>
+                        <<<blocks, 480, 0, stream>>>(
+                                    gradOutput.data<scalar_t>(),
+                                    input.data<scalar_t>(),
+                                    weight.data<scalar_t>(),
+                                    minibatch,
+                                    sequenceLength,
+                                    numFeatures,
+                                    numFiltersInBlock,
+                                    numHeads,
+                                    gradWeight.data<scalar_t>(),
+                                    gradInput.data<scalar_t>());
+                    }));
+                } else
+
+                if (padding_l == 8) {
+                    AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
+                        dynamicconv_backward_kernel<9, 480, 8, scalar_t>
+                        <<<blocks, 480, 0, stream>>>(
+                                    gradOutput.data<scalar_t>(),
+                                    input.data<scalar_t>(),
+                                    weight.data<scalar_t>(),
+                                    minibatch,
+                                    sequenceLength,
+                                    numFeatures,
+                                    numFiltersInBlock,
+                                    numHeads,
+                                    gradWeight.data<scalar_t>(),
+                                    gradInput.data<scalar_t>());
+                    }));
+                } else
+
+                {
+                    std::cout << "WARNING: Unsupported padding size - skipping backward pass" << std::endl;
+                }
+                break;
+
+
             case 15:
 
                 if (padding_l == 7) {
@@ -5365,6 +5995,48 @@ std::vector<at::Tensor> dynamicconv_cuda_backward(at::Tensor gradOutput, int pad
                 if (padding_l == 6) {
                     AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
                         dynamicconv_backward_kernel<7, 512, 6, scalar_t>
+                        <<<blocks, 512, 0, stream>>>(
+                                    gradOutput.data<scalar_t>(),
+                                    input.data<scalar_t>(),
+                                    weight.data<scalar_t>(),
+                                    minibatch,
+                                    sequenceLength,
+                                    numFeatures,
+                                    numFiltersInBlock,
+                                    numHeads,
+                                    gradWeight.data<scalar_t>(),
+                                    gradInput.data<scalar_t>());
+                    }));
+                } else
+
+                {
+                    std::cout << "WARNING: Unsupported padding size - skipping backward pass" << std::endl;
+                }
+                break;
+
+
+            case 9:
+
+                if (padding_l == 4) {
+                    AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
+                        dynamicconv_backward_kernel<9, 512, 4, scalar_t>
+                        <<<blocks, 512, 0, stream>>>(
+                                    gradOutput.data<scalar_t>(),
+                                    input.data<scalar_t>(),
+                                    weight.data<scalar_t>(),
+                                    minibatch,
+                                    sequenceLength,
+                                    numFeatures,
+                                    numFiltersInBlock,
+                                    numHeads,
+                                    gradWeight.data<scalar_t>(),
+                                    gradInput.data<scalar_t>());
+                    }));
+                } else
+
+                if (padding_l == 8) {
+                    AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
+                        dynamicconv_backward_kernel<9, 512, 8, scalar_t>
                         <<<blocks, 512, 0, stream>>>(
                                     gradOutput.data<scalar_t>(),
                                     input.data<scalar_t>(),
@@ -5728,6 +6400,51 @@ std::vector<at::Tensor> dynamicconv_cuda_backward(at::Tensor gradOutput, int pad
                 if (padding_l == 6) {
                     AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
                         dynamicconv_backward_kernel<7, 64, 6, scalar_t>
+                        <<<blocks, 64, 0, stream>>>(
+                                    gradOutput.data<scalar_t>(),
+                                    input.data<scalar_t>(),
+                                    weight.data<scalar_t>(),
+                                    minibatch,
+                                    sequenceLength,
+                                    numFeatures,
+                                    numFiltersInBlock,
+                                    numHeads,
+                                    gradWeight.data<scalar_t>(),
+                                    gradInput.data<scalar_t>());
+                    }));
+                } else
+
+                {
+                    std::cout << "WARNING: Unsupported padding size - skipping backward pass" << std::endl;
+                }
+                break;
+
+
+            case 9:
+
+                numChunks = int(ceilf(sequenceLength/float(64)));
+                blocks = dim3(minibatch, numHeads, numChunks);
+
+                if (padding_l == 4) {
+                    AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
+                        dynamicconv_backward_kernel<9, 64, 4, scalar_t>
+                        <<<blocks, 64, 0, stream>>>(
+                                    gradOutput.data<scalar_t>(),
+                                    input.data<scalar_t>(),
+                                    weight.data<scalar_t>(),
+                                    minibatch,
+                                    sequenceLength,
+                                    numFeatures,
+                                    numFiltersInBlock,
+                                    numHeads,
+                                    gradWeight.data<scalar_t>(),
+                                    gradInput.data<scalar_t>());
+                    }));
+                } else
+
+                if (padding_l == 8) {
+                    AT_DISPATCH_FLOATING_TYPES_AND_HALF(gradOutput.scalar_type(), "dynamicconv_backward", ([&] {
+                        dynamicconv_backward_kernel<9, 64, 8, scalar_t>
                         <<<blocks, 64, 0, stream>>>(
                                     gradOutput.data<scalar_t>(),
                                     input.data<scalar_t>(),

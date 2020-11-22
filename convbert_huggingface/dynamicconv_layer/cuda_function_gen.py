@@ -95,9 +95,9 @@ std::vector<at::Tensor> dynamicconv_cuda_forward(at::Tensor input, at::Tensor we
 
 def gen_backward():
 
-    kernels = [3, 5, 7, 15, 31, 63, 127, 255]
-    thresh = [512, 512, 512, 512, 512, 380, 256, 256]
-    min_block = [64, 64, 64, 64, 64, 64, 128, 256]
+    kernels = [3, 5, 7, 9, 15, 31, 63, 127, 255]
+    thresh = [512, 512, 512, 512, 512, 512, 380, 256, 256]
+    min_block = [64, 64, 64, 64, 64, 64, 64, 128, 256]
     seqs = [
         32 * x
         for x in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
