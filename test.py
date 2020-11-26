@@ -9,7 +9,7 @@ use_cuda_kernal = False  # 只有device是cuda的时候才能使用fairseq的cud
 new_x = {}
 for n, item in x.items():
     new_x[n] = item.to(device)
-for model_size in ["small", "medium-small", "base"]:
+for model_size in ["medium-small"]:
     model = ConvBertModel.from_pretrained(
         f"weights/convbert_{model_size}",
         use_cuda_kernal=use_cuda_kernal).to(device)
